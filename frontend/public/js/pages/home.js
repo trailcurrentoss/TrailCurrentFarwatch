@@ -1,10 +1,11 @@
-// Home page - Thermostat and Lights
-import { API } from '../api.js';
+// Home page - Thermostat and Devices
+import { API, wsClient } from '../api.js';
 import { Thermostat } from '../components/thermostat.js';
 import { LightsGrid } from '../components/light-button.js';
 
 let thermostat = null;
 let lightsGrid = null;
+let pdmConfigHandler = null;
 
 export const homePage = {
     render() {
@@ -19,7 +20,7 @@ export const homePage = {
                     </div>
 
                     <div class="home-panel lights-panel">
-                        <h2 class="section-title">Lighting</h2>
+                        <h2 class="section-title">Devices</h2>
                         <div class="card" id="lights-card">
                             <!-- Lights will be rendered here -->
                         </div>
@@ -45,6 +46,22 @@ export const homePage = {
             console.error('Failed to fetch lights:', error);
             document.getElementById('lights-card').innerHTML = '<p style="color: var(--danger);">Failed to load lights</p>';
         }
+
+        // Listen for PDM config changes (channel names, icons, types updated from in-vehicle)
+        pdmConfigHandler = async (data) => {
+            try {
+                const lights = data.lights || await API.getLights();
+                if (lightsGrid) {
+                    lightsGrid.cleanup();
+                }
+                lightsGrid = new LightsGrid('lights-card');
+                document.getElementById('lights-card').innerHTML = lightsGrid.render(lights);
+                await lightsGrid.init(lights);
+            } catch (error) {
+                console.error('Failed to refresh lights after PDM config change:', error);
+            }
+        };
+        wsClient.on('pdm_config', pdmConfigHandler);
     },
 
     cleanup() {
@@ -55,6 +72,10 @@ export const homePage = {
         if (lightsGrid) {
             lightsGrid.cleanup();
             lightsGrid = null;
+        }
+        if (pdmConfigHandler) {
+            wsClient.off('pdm_config', pdmConfigHandler);
+            pdmConfigHandler = null;
         }
     }
 };

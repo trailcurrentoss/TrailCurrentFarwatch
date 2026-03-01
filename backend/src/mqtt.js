@@ -10,6 +10,7 @@ const MQTT_THERMOSTAT = 'thermostat';
 const MQTT_ENERGY = 'energy';
 const MQTT_AIRQUALITY = 'airquality';
 const MQTT_GPS = 'gps';
+const MQTT_CONFIG = 'config';
 
 // MQTT Message Types
 const MSG_COMMAND = 'command';
@@ -27,7 +28,8 @@ const TOPICS = {
     GPS_LAT_LON: `${MQTT_ROOT}/${MQTT_GPS}/latlon`,
     GPS_ALT: `${MQTT_ROOT}/${MQTT_GPS}/alt`,
     GPS_GNSS_DETAILS: `${MQTT_ROOT}/${MQTT_GPS}/details`,
-    DEPLOYMENT_AVAILABLE: `${MQTT_ROOT}/deployment/available`
+    DEPLOYMENT_AVAILABLE: `${MQTT_ROOT}/deployment/available`,
+    PDM_CHANNELS_CONFIG: `${MQTT_ROOT}/${MQTT_CONFIG}/pdm_channels`
 };
 
 class MqttService {
@@ -165,6 +167,15 @@ class MqttService {
                 console.log('Subscribed to thermostat status topic');
             }
         });
+
+        // Subscribe to PDM channel config topic
+        this.client.subscribe(TOPICS.PDM_CHANNELS_CONFIG, (err) => {
+            if (err) {
+                console.error('Failed to subscribe to PDM channels config:', err);
+            } else {
+                console.log('Subscribed to PDM channels config topic');
+            }
+        });
     }
 
     handleMessage(topic, message) {
@@ -198,6 +209,8 @@ class MqttService {
                 this.handleGpsDetails(payload);
             } else if (parts[1] === MQTT_THERMOSTAT && parts[2] === MSG_STATUS) {
                 this.handleThermostatStatus(payload);
+            } else if (parts[1] === MQTT_CONFIG && parts[2] === 'pdm_channels') {
+                this.handlePdmChannelConfig(payload);
             }
         } catch (error) {
             console.error('Error handling MQTT message:', error);
@@ -291,6 +304,48 @@ class MqttService {
                 courseOverGround: payload.courseOverGround,
                 gnssMode: payload.gnssMode
             });
+        }
+    }
+
+    // Handle PDM channel config update from in-vehicle system
+    async handlePdmChannelConfig(payload) {
+        console.log('Received PDM channel config:', payload);
+
+        if (!this.db || !payload.channels || !Array.isArray(payload.channels)) return;
+
+        const lights = this.db.collection('lights');
+
+        try {
+            // Upsert each channel into the lights collection
+            const validIds = [];
+            for (const ch of payload.channels) {
+                if (!ch.id || !ch.name) continue;
+                validIds.push(ch.id);
+                await lights.updateOne(
+                    { _id: ch.id },
+                    { $set: {
+                        name: ch.name,
+                        icon: ch.icon || 'lightbulb',
+                        type: ch.type || 'light',
+                        updated_at: new Date()
+                    }},
+                    { upsert: true }
+                );
+            }
+
+            // Remove orphaned lights no longer in the config
+            if (validIds.length > 0) {
+                await lights.deleteMany({ _id: { $nin: validIds } });
+            }
+
+            // Broadcast updated config to connected WebSocket clients
+            if (this.broadcast) {
+                const allLights = await lights.find().sort({ _id: 1 }).toArray();
+                const result = allLights.map(l => ({ id: l._id, ...l }));
+                this.broadcast('pdm_config', { lights: result });
+            }
+        } catch (error) {
+            console.error('Error handling PDM channel config:', error);
         }
     }
 

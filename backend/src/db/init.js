@@ -31,10 +31,22 @@ async function seedDatabase() {
         const lightDocs = lightNames.map((name, index) => ({
             _id: index + 1,
             name,
+            icon: 'lightbulb',
+            type: 'light',
             updated_at: new Date()
         }));
         await lights.insertMany(lightDocs);
         console.log('Seeded lights');
+    } else {
+        // Migration: add icon and type to existing lights that lack them
+        const lightsWithoutIcon = await lights.countDocuments({ icon: { $exists: false } });
+        if (lightsWithoutIcon > 0) {
+            await lights.updateMany(
+                { icon: { $exists: false } },
+                { $set: { icon: 'lightbulb', type: 'light' } }
+            );
+            console.log(`Migrated ${lightsWithoutIcon} lights with default icon/type`);
+        }
     }
 
     // Seed trailer level (simulated - no MQTT source)
