@@ -56,7 +56,7 @@ export class AirQualityDisplay {
                     <div class="airquality-info">
                         <span class="airquality-value" id="iaq-value">${iaqDisplay}</span>
                         <span class="airquality-label">IAQ Index</span>
-                        <span class="airquality-badge ${this.getIaqClass()}" id="iaq-badge">${this.getIaqLabel()}</span>
+                        <span class="airquality-badge ${this.getIaqClass()}" id="iaq-badge" ${this.data.iaq_index == null ? 'style="display:none"' : ''}>${this.getIaqLabel()}</span>
                     </div>
                 </div>
 
@@ -68,7 +68,7 @@ export class AirQualityDisplay {
                     <div class="airquality-info">
                         <span class="airquality-value" id="co2-value">${co2Display}<span class="airquality-unit">ppm</span></span>
                         <span class="airquality-label">CO₂</span>
-                        <span class="airquality-badge ${this.getCo2Class()}" id="co2-badge">${this.getCo2Label()}</span>
+                        <span class="airquality-badge ${this.getCo2Class()}" id="co2-badge" ${this.data.co2_ppm == null ? 'style="display:none"' : ''}>${this.getCo2Label()}</span>
                     </div>
                 </div>
             </div>
@@ -86,7 +86,7 @@ export class AirQualityDisplay {
 
     getIaqLabel() {
         const iaq = this.data.iaq_index;
-        if (iaq == null) return '-';
+        if (iaq == null) return '';
         if (iaq <= 50) return 'Good';
         if (iaq <= 100) return 'Moderate';
         if (iaq <= 150) return 'Sensitive';
@@ -104,7 +104,7 @@ export class AirQualityDisplay {
 
     getCo2Label() {
         const co2 = this.data.co2_ppm;
-        if (co2 == null) return '-';
+        if (co2 == null) return '';
         if (co2 < 800) return 'Good';
         if (co2 < 1000) return 'Moderate';
         if (co2 < 2000) return 'Poor';
@@ -169,6 +169,7 @@ export class AirQualityDisplay {
         if (iaqBadge) {
             iaqBadge.textContent = this.getIaqLabel();
             iaqBadge.className = `airquality-badge ${this.getIaqClass()}`;
+            iaqBadge.style.display = this.data.iaq_index != null ? '' : 'none';
         }
 
         if (co2Value) {
@@ -179,6 +180,7 @@ export class AirQualityDisplay {
         if (co2Badge) {
             co2Badge.textContent = this.getCo2Label();
             co2Badge.className = `airquality-badge ${this.getCo2Class()}`;
+            co2Badge.style.display = this.data.co2_ppm != null ? '' : 'none';
         }
         // Update card classes for IAQ
         const iaqCard = document.querySelector('.airquality-card:first-child');
