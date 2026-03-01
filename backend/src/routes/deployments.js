@@ -156,6 +156,9 @@ module.exports = (db) => {
                 return res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
             }
 
+            const { progress } = req.body;
+            const isProgressUpdate = status === 'downloading' && typeof progress === 'number';
+
             const statusDoc = {
                 deploymentId,
                 status,
@@ -164,17 +167,24 @@ module.exports = (db) => {
                 receivedAt: new Date()
             };
 
-            await deploymentStatuses.insertOne(statusDoc);
+            // Skip database writes for intermediate download progress to avoid flooding
+            if (!isProgressUpdate) {
+                await deploymentStatuses.insertOne(statusDoc);
+            }
 
             // Broadcast status update to all connected WebSocket clients
             const broadcast = req.app.get('broadcast');
             if (broadcast) {
-                broadcast('deployment_status', {
+                const wsPayload = {
                     deploymentId,
                     status,
                     version: statusDoc.version,
                     timestamp: statusDoc.timestamp.toISOString()
-                });
+                };
+                if (typeof progress === 'number') {
+                    wsPayload.progress = progress;
+                }
+                broadcast('deployment_status', wsPayload);
             }
 
             res.json({ ok: true });

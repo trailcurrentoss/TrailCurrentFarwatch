@@ -365,14 +365,15 @@ class MqttService {
     async handleDeploymentStatus(payload) {
         console.log('Received deployment status:', payload);
 
-        const { deploymentId, status, version } = payload;
+        const { deploymentId, status, version, progress } = payload;
         if (!deploymentId || !status) return;
 
         const validStatuses = ['downloading', 'downloaded', 'extracting', 'deploying', 'completed', 'failed'];
         if (!validStatuses.includes(status)) return;
 
-        // Store in database
-        if (this.db) {
+        // Store in database (skip intermediate download progress to avoid flooding)
+        const isProgressUpdate = status === 'downloading' && typeof progress === 'number';
+        if (this.db && !isProgressUpdate) {
             try {
                 await this.db.collection('deployment_statuses').insertOne({
                     deploymentId,
@@ -386,14 +387,18 @@ class MqttService {
             }
         }
 
-        // Broadcast to WebSocket clients
+        // Broadcast to WebSocket clients (always, including progress updates)
         if (this.broadcast) {
-            this.broadcast('deployment_status', {
+            const wsPayload = {
                 deploymentId,
                 status,
                 version: version || 'unknown',
                 timestamp: new Date(payload.timestamp || Date.now()).toISOString()
-            });
+            };
+            if (typeof progress === 'number') {
+                wsPayload.progress = progress;
+            }
+            this.broadcast('deployment_status', wsPayload);
         }
     }
 

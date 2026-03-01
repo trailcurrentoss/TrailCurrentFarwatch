@@ -18,7 +18,7 @@ function formatDate(dateStr) {
     });
 }
 
-function formatStatus(status) {
+function formatStatus(status, progress) {
     if (!status) return '';
     const labels = {
         downloading: 'Downloading',
@@ -28,7 +28,11 @@ function formatStatus(status) {
         completed: 'Deployed',
         failed: 'Failed'
     };
-    return labels[status] || status;
+    const label = labels[status] || status;
+    if (status === 'downloading' && typeof progress === 'number') {
+        return `${label} ${progress}%`;
+    }
+    return label;
 }
 
 function statusClass(status) {
@@ -100,13 +104,14 @@ export const deploymentsPage = {
     },
 
     handleStatusUpdate(data) {
-        const { deploymentId, status, timestamp } = data;
+        const { deploymentId, status, timestamp, progress } = data;
 
         // Update the cached list
         const deployment = deploymentsList.find(d => d.id === deploymentId);
         if (deployment) {
             deployment.latestStatus = status;
             deployment.statusUpdatedAt = timestamp;
+            deployment.downloadProgress = typeof progress === 'number' ? progress : undefined;
         }
 
         // Update the badge in the DOM without a full re-render
@@ -130,7 +135,7 @@ export const deploymentsPage = {
                     headerRow.appendChild(badge);
                 }
                 badge.className = `deployment-status ${statusClass(status)}`;
-                badge.textContent = formatStatus(status);
+                badge.textContent = formatStatus(status, d.downloadProgress);
             } else if (badge) {
                 badge.remove();
             }
@@ -140,7 +145,7 @@ export const deploymentsPage = {
             if (metaLines.length >= 2 && d) {
                 const baseMeta = `${formatDate(d.uploadedAt)} \u00b7 ${d.sha256.substring(0, 12)}...`;
                 metaLines[1].innerHTML = d.statusUpdatedAt
-                    ? `${baseMeta} &middot; ${formatStatus(d.latestStatus)}: ${formatDate(d.statusUpdatedAt)}`
+                    ? `${baseMeta} &middot; ${formatStatus(d.latestStatus, d.downloadProgress)}: ${formatDate(d.statusUpdatedAt)}`
                     : baseMeta;
             }
         });
