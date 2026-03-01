@@ -156,13 +156,26 @@ module.exports = (db) => {
                 return res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
             }
 
-            await deploymentStatuses.insertOne({
+            const statusDoc = {
                 deploymentId,
                 status,
                 version: version || 'unknown',
                 timestamp: new Date(req.body.timestamp || Date.now()),
                 receivedAt: new Date()
-            });
+            };
+
+            await deploymentStatuses.insertOne(statusDoc);
+
+            // Broadcast status update to all connected WebSocket clients
+            const broadcast = req.app.get('broadcast');
+            if (broadcast) {
+                broadcast('deployment_status', {
+                    deploymentId,
+                    status,
+                    version: statusDoc.version,
+                    timestamp: statusDoc.timestamp.toISOString()
+                });
+            }
 
             res.json({ ok: true });
         } catch (error) {

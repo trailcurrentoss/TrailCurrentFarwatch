@@ -1,5 +1,5 @@
 // Deployments page
-import { API, AuthStore } from '../api.js';
+import { API, AuthStore, wsClient } from '../api.js';
 
 let deploymentsList = [];
 
@@ -23,6 +23,7 @@ function formatStatus(status) {
     const labels = {
         downloading: 'Downloading',
         downloaded: 'Downloaded',
+        extracting: 'Extracting',
         deploying: 'Deploying',
         completed: 'Deployed',
         failed: 'Failed'
@@ -90,6 +91,59 @@ export const deploymentsPage = {
     async init() {
         await this.loadDeployments();
         this.setupUploadForm();
+
+        // Listen for real-time deployment status updates via WebSocket
+        this._wsHandler = (data) => {
+            this.handleStatusUpdate(data);
+        };
+        wsClient.on('deployment_status', this._wsHandler);
+    },
+
+    handleStatusUpdate(data) {
+        const { deploymentId, status, timestamp } = data;
+
+        // Update the cached list
+        const deployment = deploymentsList.find(d => d.id === deploymentId);
+        if (deployment) {
+            deployment.latestStatus = status;
+            deployment.statusUpdatedAt = timestamp;
+        }
+
+        // Update the badge in the DOM without a full re-render
+        const listEl = document.getElementById('deployments-list');
+        if (!listEl) return;
+
+        const items = listEl.querySelectorAll('.deployment-list-item');
+        items.forEach((item, index) => {
+            const d = deploymentsList[index];
+            if (!d || d.id !== deploymentId) return;
+
+            const headerRow = item.querySelector('.deployment-header-row');
+            if (!headerRow) return;
+
+            // Update or insert the status badge
+            let badge = headerRow.querySelector('.deployment-status');
+            if (status) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'deployment-status';
+                    headerRow.appendChild(badge);
+                }
+                badge.className = `deployment-status ${statusClass(status)}`;
+                badge.textContent = formatStatus(status);
+            } else if (badge) {
+                badge.remove();
+            }
+
+            // Update the meta line with status timestamp
+            const metaLines = item.querySelectorAll('.deployment-meta');
+            if (metaLines.length >= 2 && d) {
+                const baseMeta = `${formatDate(d.uploadedAt)} \u00b7 ${d.sha256.substring(0, 12)}...`;
+                metaLines[1].innerHTML = d.statusUpdatedAt
+                    ? `${baseMeta} &middot; ${formatStatus(d.latestStatus)}: ${formatDate(d.statusUpdatedAt)}`
+                    : baseMeta;
+            }
+        });
     },
 
     async loadDeployments() {
@@ -222,6 +276,10 @@ export const deploymentsPage = {
     },
 
     cleanup() {
+        if (this._wsHandler) {
+            wsClient.off('deployment_status', this._wsHandler);
+            this._wsHandler = null;
+        }
         deploymentsList = [];
     }
 };

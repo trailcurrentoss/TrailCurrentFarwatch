@@ -29,6 +29,7 @@ const TOPICS = {
     GPS_ALT: `${MQTT_ROOT}/${MQTT_GPS}/alt`,
     GPS_GNSS_DETAILS: `${MQTT_ROOT}/${MQTT_GPS}/details`,
     DEPLOYMENT_AVAILABLE: `${MQTT_ROOT}/deployment/available`,
+    DEPLOYMENT_STATUS: `${MQTT_ROOT}/deployment/status`,
     PDM_CHANNELS_CONFIG: `${MQTT_ROOT}/${MQTT_CONFIG}/pdm_channels`
 };
 
@@ -168,6 +169,15 @@ class MqttService {
             }
         });
 
+        // Subscribe to deployment status topic
+        this.client.subscribe(TOPICS.DEPLOYMENT_STATUS, (err) => {
+            if (err) {
+                console.error('Failed to subscribe to deployment status:', err);
+            } else {
+                console.log('Subscribed to deployment status topic');
+            }
+        });
+
         // Subscribe to PDM channel config topic
         this.client.subscribe(TOPICS.PDM_CHANNELS_CONFIG, (err) => {
             if (err) {
@@ -209,6 +219,8 @@ class MqttService {
                 this.handleGpsDetails(payload);
             } else if (parts[1] === MQTT_THERMOSTAT && parts[2] === MSG_STATUS) {
                 this.handleThermostatStatus(payload);
+            } else if (parts[1] === 'deployment' && parts[2] === 'status') {
+                this.handleDeploymentStatus(payload);
             } else if (parts[1] === MQTT_CONFIG && parts[2] === 'pdm_channels') {
                 this.handlePdmChannelConfig(payload);
             }
@@ -346,6 +358,42 @@ class MqttService {
             }
         } catch (error) {
             console.error('Error handling PDM channel config:', error);
+        }
+    }
+
+    // Handle deployment status update from vehicle
+    async handleDeploymentStatus(payload) {
+        console.log('Received deployment status:', payload);
+
+        const { deploymentId, status, version } = payload;
+        if (!deploymentId || !status) return;
+
+        const validStatuses = ['downloading', 'downloaded', 'extracting', 'deploying', 'completed', 'failed'];
+        if (!validStatuses.includes(status)) return;
+
+        // Store in database
+        if (this.db) {
+            try {
+                await this.db.collection('deployment_statuses').insertOne({
+                    deploymentId,
+                    status,
+                    version: version || 'unknown',
+                    timestamp: new Date(payload.timestamp || Date.now()),
+                    receivedAt: new Date()
+                });
+            } catch (error) {
+                console.error('Error saving deployment status from MQTT:', error);
+            }
+        }
+
+        // Broadcast to WebSocket clients
+        if (this.broadcast) {
+            this.broadcast('deployment_status', {
+                deploymentId,
+                status,
+                version: version || 'unknown',
+                timestamp: new Date(payload.timestamp || Date.now()).toISOString()
+            });
         }
     }
 
