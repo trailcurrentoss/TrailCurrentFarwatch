@@ -383,6 +383,21 @@ class MqttService {
         return true;
     }
 
+    // Publish all lights on/off command (single CAN Bus command)
+    publishAllLightsCommand(state) {
+        if (!this.connected) {
+            console.warn('MQTT not connected, cannot publish all lights command');
+            return false;
+        }
+
+        const topic = `${MQTT_ROOT}/${MQTT_LIGHTS}/all/${MSG_COMMAND}`;
+        const payload = { state };
+
+        console.log(`Publishing all lights command to ${topic}:`, payload);
+        this.client.publish(topic, JSON.stringify(payload), { qos: 1 });
+        return true;
+    }
+
     // Publish light command
     publishLightCommand(lightId, state, brightness = null) {
         if (!this.connected) {

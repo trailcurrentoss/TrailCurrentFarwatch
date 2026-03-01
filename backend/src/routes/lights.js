@@ -27,10 +27,7 @@ module.exports = (db) => {
                 return res.status(400).json({ error: 'State must be 0 or 1' });
             }
 
-            const allLights = await lights.find().sort({ _id: 1 }).toArray();
-            for (const light of allLights) {
-                mqttService.publishLightCommand(light._id, state);
-            }
+            mqttService.publishAllLightsCommand(state);
 
             res.json({ success: true, state });
         } catch (error) {
