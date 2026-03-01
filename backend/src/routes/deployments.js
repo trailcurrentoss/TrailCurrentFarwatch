@@ -10,9 +10,15 @@ const DEPLOYMENT_DIR = process.env.DEPLOYMENT_STORAGE_PATH || '/data/deployments
 
 module.exports = (db) => {
     const deployments = db.collection('deployments');
+    const deploymentStatuses = db.collection('deployment_statuses');
 
     // Ensure storage directory exists on startup
     fs.mkdirSync(DEPLOYMENT_DIR, { recursive: true });
+
+    // Ensure index for deployment status lookups
+    deploymentStatuses.createIndex({ deploymentId: 1, timestamp: -1 }).catch(err => {
+        console.error('Failed to create deployment_statuses index:', err);
+    });
 
     // POST /api/deployments/upload
     router.post('/upload', (req, res) => {
@@ -135,12 +141,59 @@ module.exports = (db) => {
         req.pipe(busboy);
     });
 
+    // POST /api/deployments/status
+    // Receives deployment status updates from vehicles
+    router.post('/status', async (req, res) => {
+        try {
+            const { deploymentId, status, version } = req.body;
+
+            if (!deploymentId || !status) {
+                return res.status(400).json({ error: 'deploymentId and status are required' });
+            }
+
+            const validStatuses = ['downloading', 'downloaded', 'extracting', 'deploying', 'completed', 'failed'];
+            if (!validStatuses.includes(status)) {
+                return res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+            }
+
+            await deploymentStatuses.insertOne({
+                deploymentId,
+                status,
+                version: version || 'unknown',
+                timestamp: new Date(req.body.timestamp || Date.now()),
+                receivedAt: new Date()
+            });
+
+            res.json({ ok: true });
+        } catch (error) {
+            console.error('Error saving deployment status:', error);
+            res.status(500).json({ error: 'Failed to save deployment status' });
+        }
+    });
+
     // GET /api/deployments
     router.get('/', async (req, res) => {
         try {
             const list = await deployments.find()
                 .sort({ uploadedAt: -1 })
                 .toArray();
+
+            // Fetch latest status for each deployment
+            const deploymentIds = list.map(d => d._id.toString());
+            const latestStatuses = await deploymentStatuses.aggregate([
+                { $match: { deploymentId: { $in: deploymentIds } } },
+                { $sort: { timestamp: -1 } },
+                { $group: {
+                    _id: '$deploymentId',
+                    status: { $first: '$status' },
+                    timestamp: { $first: '$timestamp' }
+                }}
+            ]).toArray();
+
+            const statusMap = {};
+            for (const s of latestStatuses) {
+                statusMap[s._id] = { status: s.status, timestamp: s.timestamp };
+            }
 
             res.json(list.map(d => ({
                 id: d._id,
@@ -149,7 +202,9 @@ module.exports = (db) => {
                 size: d.size,
                 sha256: d.sha256,
                 uploadedBy: d.uploadedBy,
-                uploadedAt: d.uploadedAt
+                uploadedAt: d.uploadedAt,
+                latestStatus: statusMap[d._id.toString()]?.status || null,
+                statusUpdatedAt: statusMap[d._id.toString()]?.timestamp || null
             })));
         } catch (error) {
             console.error('Error fetching deployments:', error);
@@ -176,6 +231,9 @@ module.exports = (db) => {
             });
 
             await deployments.deleteOne({ _id: id });
+
+            // Clean up status records for this deployment
+            await deploymentStatuses.deleteMany({ deploymentId: req.params.id });
 
             res.json({ message: 'Deployment deleted' });
         } catch (error) {

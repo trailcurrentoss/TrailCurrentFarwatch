@@ -18,6 +18,25 @@ function formatDate(dateStr) {
     });
 }
 
+function formatStatus(status) {
+    if (!status) return '';
+    const labels = {
+        downloading: 'Downloading',
+        downloaded: 'Downloaded',
+        deploying: 'Deploying',
+        completed: 'Deployed',
+        failed: 'Failed'
+    };
+    return labels[status] || status;
+}
+
+function statusClass(status) {
+    if (!status) return '';
+    if (status === 'completed') return 'status-success';
+    if (status === 'failed') return 'status-danger';
+    return 'status-active';
+}
+
 export const deploymentsPage = {
     render() {
         return `
@@ -84,9 +103,12 @@ export const deploymentsPage = {
             listEl.innerHTML = deploymentsList.map(d => `
                 <div class="deployment-list-item">
                     <div class="deployment-info">
-                        <span class="deployment-version">v${d.version}</span>
+                        <div class="deployment-header-row">
+                            <span class="deployment-version">v${d.version}</span>
+                            ${d.latestStatus ? `<span class="deployment-status ${statusClass(d.latestStatus)}">${formatStatus(d.latestStatus)}</span>` : ''}
+                        </div>
                         <span class="deployment-meta">${d.filename} &middot; ${formatFileSize(d.size)}</span>
-                        <span class="deployment-meta">${formatDate(d.uploadedAt)} &middot; ${d.sha256.substring(0, 12)}...</span>
+                        <span class="deployment-meta">${formatDate(d.uploadedAt)} &middot; ${d.sha256.substring(0, 12)}...${d.statusUpdatedAt ? ' &middot; ' + formatStatus(d.latestStatus) + ': ' + formatDate(d.statusUpdatedAt) : ''}</span>
                     </div>
                     <button class="deployment-delete-btn" data-id="${d.id}" title="Delete package">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">

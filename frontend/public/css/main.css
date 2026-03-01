@@ -1578,6 +1578,37 @@ body {
     cursor: not-allowed;
 }
 
+/* Deployment status badges */
+.deployment-header-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.deployment-status {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.deployment-status.status-success {
+    color: var(--success);
+    background: var(--success-bg-subtle);
+}
+
+.deployment-status.status-danger {
+    color: var(--danger);
+    background: var(--danger-bg-subtle);
+}
+
+.deployment-status.status-active {
+    color: var(--info);
+    background: var(--info-bg-subtle);
+}
+
 /* API Key management */
 .api-keys-container {
     display: flex;
