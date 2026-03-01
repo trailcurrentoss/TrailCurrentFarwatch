@@ -506,6 +506,7 @@ body {
 .light-btn .light-icon {
     width: 32px;
     height: 32px;
+    pointer-events: none;
 }
 
 .light-btn.on .light-icon {
