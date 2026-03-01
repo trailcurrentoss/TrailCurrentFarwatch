@@ -5,10 +5,11 @@ export class LevelIndicator {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
         this.data = {
-            front_back: 0,
-            side_to_side: 0,
+            front_back: null,
+            side_to_side: null,
         };
         this.wsHandler = null;
+        this.unsubStale = null;
         // Trailer dimensions for inches calculation (in inches)
         this.trailerLength = 300; // 25 feet
         this.trailerWidth = 96;   // 8 feet
@@ -42,11 +43,13 @@ export class LevelIndicator {
     }
 
     formatDegrees(value) {
+        if (value == null) return '-';
         const sign = value > 0 ? '+' : '';
         return `${sign}${value.toFixed(1)}°`;
     }
 
     formatInches(degrees, length) {
+        if (degrees == null) return '-';
         // Calculate rise at end: tan(angle) * (length/2)
         const radians = Math.abs(degrees) * (Math.PI / 180);
         const inches = Math.tan(radians) * (length / 2);
@@ -55,14 +58,20 @@ export class LevelIndicator {
     }
 
     getStatusClass(value) {
+        if (value == null) return '';
         const absValue = Math.abs(value);
         if (absValue > 5) return 'danger';
         if (absValue > 2) return 'warning';
         return '';
     }
 
+    markStale() {
+        this.data = { front_back: null, side_to_side: null };
+        this.updateDisplay();
+    }
+
     init(data) {
-        this.data = { ...this.data, ...data };
+        if (data) this.data = { ...this.data, ...data };
         this.updateDisplay();
 
         // Setup WebSocket listener
@@ -71,6 +80,8 @@ export class LevelIndicator {
             this.updateDisplay();
         };
         wsClient.on('level', this.wsHandler);
+
+        this.unsubStale = wsClient.onStale('level', () => this.markStale());
     }
 
     updateDisplay() {
@@ -82,20 +93,15 @@ export class LevelIndicator {
         const ssInches = document.getElementById('ss-inches');
 
         if (fbFill) {
-            // Calculate position: -15 to +15 degrees maps to 0-100% offset
-            const fbOffset = (this.data.front_back / 15) * 40; // Max 40% offset from center
+            const fbOffset = this.data.front_back != null ? (this.data.front_back / 15) * 40 : 0;
             fbFill.style.transform = `translate(calc(-50% + ${fbOffset}%), -50%)`;
-
-            const fbStatus = this.getStatusClass(this.data.front_back);
-            fbFill.className = `level-bubble-fill ${fbStatus}`;
+            fbFill.className = `level-bubble-fill ${this.getStatusClass(this.data.front_back)}`;
         }
 
         if (ssFill) {
-            const ssOffset = (this.data.side_to_side / 15) * 40;
+            const ssOffset = this.data.side_to_side != null ? (this.data.side_to_side / 15) * 40 : 0;
             ssFill.style.transform = `translate(calc(-50% + ${ssOffset}%), -50%)`;
-
-            const ssStatus = this.getStatusClass(this.data.side_to_side);
-            ssFill.className = `level-bubble-fill ${ssStatus}`;
+            ssFill.className = `level-bubble-fill ${this.getStatusClass(this.data.side_to_side)}`;
         }
 
         if (fbValue) {
@@ -123,5 +129,6 @@ export class LevelIndicator {
         if (this.wsHandler) {
             wsClient.off('level', this.wsHandler);
         }
+        if (this.unsubStale) this.unsubStale();
     }
 }

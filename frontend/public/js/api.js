@@ -239,6 +239,8 @@ class WebSocketClient {
         this.maxReconnectAttempts = 10;
         this.reconnectDelay = 1000;
         this.isConnected = false;
+        // Staleness tracking: topic -> { lastReceived, timeout, timerId, callbacks }
+        this.stalenessTrackers = new Map();
     }
 
     connect() {
@@ -315,6 +317,46 @@ class WebSocketClient {
         if (this.listeners.has(type)) {
             this.listeners.get(type).forEach(callback => callback(data));
         }
+        // Reset staleness timer for this topic
+        this.resetStalenessTimer(type);
+    }
+
+    // Register a staleness callback for a topic. When no data arrives for
+    // `timeoutMs` the callback fires. Returns an unsubscribe function.
+    // Default timeout is 30 seconds — long enough to avoid flickering
+    // between periodic readings.
+    onStale(type, callback, timeoutMs = 30000) {
+        if (!this.stalenessTrackers.has(type)) {
+            this.stalenessTrackers.set(type, { timeout: timeoutMs, timerId: null, callbacks: [] });
+        }
+        const tracker = this.stalenessTrackers.get(type);
+        tracker.callbacks.push(callback);
+        tracker.timeout = timeoutMs;
+        // Start the timer immediately (data hasn't arrived yet)
+        this.startStalenessTimer(type);
+        return () => {
+            const idx = tracker.callbacks.indexOf(callback);
+            if (idx > -1) tracker.callbacks.splice(idx, 1);
+            if (tracker.callbacks.length === 0) {
+                clearTimeout(tracker.timerId);
+                this.stalenessTrackers.delete(type);
+            }
+        };
+    }
+
+    resetStalenessTimer(type) {
+        const tracker = this.stalenessTrackers.get(type);
+        if (!tracker) return;
+        clearTimeout(tracker.timerId);
+        this.startStalenessTimer(type);
+    }
+
+    startStalenessTimer(type) {
+        const tracker = this.stalenessTrackers.get(type);
+        if (!tracker) return;
+        tracker.timerId = setTimeout(() => {
+            tracker.callbacks.forEach(cb => cb());
+        }, tracker.timeout);
     }
 
     disconnect() {
@@ -322,6 +364,11 @@ class WebSocketClient {
             this.ws.close();
             this.ws = null;
         }
+        // Clear all staleness timers
+        for (const [, tracker] of this.stalenessTrackers) {
+            clearTimeout(tracker.timerId);
+        }
+        this.stalenessTrackers.clear();
     }
 }
 

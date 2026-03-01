@@ -39,12 +39,7 @@ export const trailerPage = {
         try {
             gnssDetails = new GnssDetails('gnss-card');
             document.getElementById('gnss-card').innerHTML = gnssDetails.render();
-            gnssDetails.init({
-                numberOfSatellites: 0,
-                speedOverGround: 0,
-                courseOverGround: 0,
-                gnssMode: 0
-            });
+            gnssDetails.init();
         } catch (error) {
             console.error('Failed to render elevation data:', error);
             document.getElementById('gnss-card').innerHTML = '<p style="color: var(--danger);">Failed to load elevation data</p>';

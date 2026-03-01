@@ -5,17 +5,19 @@ export class GnssDetails {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
         this.data = {
-            altitudeFeet: 0,
-            altitudeInMeters: 0
+            altitudeFeet: null,
+            altitudeInMeters: null
         }
         this.gnssDetailsData = {
-            numberOfSatellites: 0,
-            speedOverGround: 0,
-            courseOverGround: 0,
-            gnssMode: 0
+            numberOfSatellites: null,
+            speedOverGround: null,
+            courseOverGround: null,
+            gnssMode: null
         }
         this.wsHandler = null;
         this.wsGnssDetailsHandler = null;
+        this.unsubStaleAlt = null;
+        this.unsubStaleGnss = null;
     }
 
     render() {
@@ -51,22 +53,22 @@ export class GnssDetails {
 
     formatElevation() {
         const elevation = this.data.altitudeFeet;
-        if (elevation === null || elevation === undefined) {
-            return '--';
+        if (elevation == null) {
+            return '-';
         }
         return `${elevation.toLocaleString()} ft`;
     }
 
     formatSatellites() {
         const satellites = this.gnssDetailsData.numberOfSatellites;
-        if (satellites === null || satellites === undefined) {
-            return '--';
+        if (satellites == null) {
+            return '-';
         }
         return satellites.toString();
     }
 
     renderGnssSystems() {
-        const systems = this.gnssDetailsData.gnssMode || 0;
+        const systems = this.gnssDetailsData.gnssMode != null ? this.gnssDetailsData.gnssMode : 0;
         switch(systems) {
             case 0:
                 return '<span class="gnss-badge inactive">No Fix</span>';
@@ -91,7 +93,7 @@ export class GnssDetails {
 
     getSatelliteClass() {
         const sats = this.gnssDetailsData.numberOfSatellites;
-        if (sats === null || sats === undefined || sats < 4) return 'poor';
+        if (sats == null || sats < 4) return 'poor';
         if (sats < 8) return 'moderate';
         return 'good';
     }
@@ -104,7 +106,7 @@ export class GnssDetails {
     }
 
     init(data) {
-        this.data = { ...this.data, ...data };
+        if (data) this.data = { ...this.data, ...data };
         this.updateDisplay();
         this.updateGnssDetailsDisplay();
 
@@ -121,6 +123,15 @@ export class GnssDetails {
             this.updateGnssDetailsDisplay();
         }
         wsClient.on('gnss_details',this.wsGnssDetailsHandler);
+
+        this.unsubStaleAlt = wsClient.onStale('alt', () => {
+            this.data = { altitudeFeet: null, altitudeInMeters: null };
+            this.updateDisplay();
+        });
+        this.unsubStaleGnss = wsClient.onStale('gnss_details', () => {
+            this.gnssDetailsData = { numberOfSatellites: null, speedOverGround: null, courseOverGround: null, gnssMode: null };
+            this.updateGnssDetailsDisplay();
+        });
     }
 
     updateDisplay() {
@@ -154,5 +165,7 @@ export class GnssDetails {
         if (this.wsGnssDetailsHandler) {
             wsClient.off('gnss_details',this.wsGnssDetailsHandler);
         }
+        if (this.unsubStaleAlt) this.unsubStaleAlt();
+        if (this.unsubStaleGnss) this.unsubStaleGnss();
     }
 }
