@@ -18,6 +18,27 @@ module.exports = (db) => {
         }
     });
 
+    // PUT /api/lights/all - All on or all off
+    // Must be defined before /:id to avoid Express matching "all" as an id
+    router.put('/all', async (req, res) => {
+        try {
+            const { state } = req.body;
+            if (![0, 1].includes(state)) {
+                return res.status(400).json({ error: 'State must be 0 or 1' });
+            }
+
+            const allLights = await lights.find().sort({ _id: 1 }).toArray();
+            for (const light of allLights) {
+                mqttService.publishLightCommand(light._id, state);
+            }
+
+            res.json({ success: true, state });
+        } catch (error) {
+            console.error('Error sending all lights command:', error);
+            res.status(500).json({ error: 'Failed to send all lights command' });
+        }
+    });
+
     // PUT /api/lights/:id - Publish command to MQTT
     router.put('/:id', async (req, res) => {
         try {
