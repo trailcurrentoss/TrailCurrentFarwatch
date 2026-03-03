@@ -14,6 +14,7 @@ const MQTT_CONFIG = 'config';
 
 // MQTT Message Types
 const MSG_COMMAND = 'command';
+const MSG_BRIGHTNESS = 'brightness';
 const MSG_STATUS = 'status';
 
 // MQTT Topics
@@ -451,21 +452,24 @@ class MqttService {
         return true;
     }
 
-    // Publish light command
+    // Publish light command (toggle or brightness, routed to separate MQTT topics)
     publishLightCommand(lightId, state, brightness = null) {
         if (!this.connected) {
             console.warn('MQTT not connected, cannot publish light command');
             return false;
         }
 
-        const topic = `${MQTT_ROOT}/${MQTT_LIGHTS}/${lightId}/${MSG_COMMAND}`;
-        const payload = { state };
         if (brightness !== null) {
-            payload.brightness = brightness;
+            const topic = `${MQTT_ROOT}/${MQTT_LIGHTS}/${lightId}/${MSG_BRIGHTNESS}`;
+            const payload = { brightness };
+            console.log(`Publishing light brightness to ${topic}:`, payload);
+            this.client.publish(topic, JSON.stringify(payload), { qos: 1 });
+        } else {
+            const topic = `${MQTT_ROOT}/${MQTT_LIGHTS}/${lightId}/${MSG_COMMAND}`;
+            const payload = { state };
+            console.log(`Publishing light command to ${topic}:`, payload);
+            this.client.publish(topic, JSON.stringify(payload), { qos: 1 });
         }
-
-        console.log(`Publishing light command to ${topic}:`, payload);
-        this.client.publish(topic, JSON.stringify(payload), { qos: 1 });
         return true;
     }
 
