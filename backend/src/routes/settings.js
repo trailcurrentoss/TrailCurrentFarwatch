@@ -1,17 +1,6 @@
 const express = require('express');
 const router = express.Router();
 
-const VALID_TIMEZONES = [
-    'America/New_York',
-    'America/Chicago',
-    'America/Denver',
-    'America/Phoenix',
-    'America/Los_Angeles',
-    'America/Anchorage',
-    'Pacific/Honolulu',
-    'UTC'
-];
-
 module.exports = (db) => {
     const settings = db.collection('settings');
 
@@ -19,10 +8,7 @@ module.exports = (db) => {
     router.get('/', async (req, res) => {
         try {
             const data = await settings.findOne({ _id: 'main' });
-            res.json({
-                ...data,
-                available_timezones: VALID_TIMEZONES
-            });
+            res.json(data);
         } catch (error) {
             console.error('Error fetching settings:', error);
             res.status(500).json({ error: 'Failed to fetch settings' });
@@ -32,7 +18,7 @@ module.exports = (db) => {
     // PUT /api/settings
     router.put('/', async (req, res) => {
         try {
-            const { theme, timezone, clock_format } = req.body;
+            const { theme } = req.body;
 
             const updates = {};
 
@@ -41,20 +27,6 @@ module.exports = (db) => {
                     return res.status(400).json({ error: 'Theme must be dark or light' });
                 }
                 updates.theme = theme;
-            }
-
-            if (timezone !== undefined) {
-                if (!VALID_TIMEZONES.includes(timezone)) {
-                    return res.status(400).json({ error: 'Invalid timezone' });
-                }
-                updates.timezone = timezone;
-            }
-
-            if (clock_format !== undefined) {
-                if (!['12h', '24h'].includes(clock_format)) {
-                    return res.status(400).json({ error: 'Clock format must be 12h or 24h' });
-                }
-                updates.clock_format = clock_format;
             }
 
             if (Object.keys(updates).length === 0) {
@@ -69,10 +41,7 @@ module.exports = (db) => {
             );
 
             const data = await settings.findOne({ _id: 'main' });
-            res.json({
-                ...data,
-                available_timezones: VALID_TIMEZONES
-            });
+            res.json(data);
         } catch (error) {
             console.error('Error updating settings:', error);
             res.status(500).json({ error: 'Failed to update settings' });

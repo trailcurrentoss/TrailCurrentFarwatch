@@ -69,8 +69,6 @@ async function seedDatabase() {
         await settings.insertOne({
             _id: 'main',
             theme: 'dark',
-            timezone: 'America/New_York',
-            clock_format: '12h',
             updated_at: new Date()
         });
         console.log('Seeded settings');

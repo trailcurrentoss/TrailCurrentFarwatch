@@ -2,7 +2,6 @@
 import { API } from '../api.js';
 
 let settings = null;
-let availableTimezones = [];
 
 export const settingsPage = {
     render() {
@@ -31,31 +30,6 @@ export const settingsPage = {
                 <button class="toggle-switch ${settings.theme === 'dark' ? 'active' : ''}"
                         id="theme-toggle"
                         aria-pressed="${settings.theme === 'dark'}">
-                </button>
-            </div>
-
-            <!-- Timezone -->
-            <div class="card settings-item">
-                <div>
-                    <span class="settings-label">Timezone</span>
-                    <p class="settings-description">Set your local timezone</p>
-                </div>
-                <select class="settings-select" id="timezone-select">
-                    ${availableTimezones.map(tz => `
-                        <option value="${tz}" ${settings.timezone === tz ? 'selected' : ''}>${tz}</option>
-                    `).join('')}
-                </select>
-            </div>
-
-            <!-- Clock Format -->
-            <div class="card settings-item">
-                <div>
-                    <span class="settings-label">24-Hour Clock</span>
-                    <p class="settings-description">Use 24-hour time format</p>
-                </div>
-                <button class="toggle-switch ${settings.clock_format === '24h' ? 'active' : ''}"
-                        id="clock-format-toggle"
-                        aria-pressed="${settings.clock_format === '24h'}">
                 </button>
             </div>
 
@@ -141,7 +115,6 @@ export const settingsPage = {
         try {
             const data = await API.getSettings();
             settings = data;
-            availableTimezones = data.available_timezones || [];
 
             document.getElementById('settings-container').innerHTML = this.renderSettings();
             this.setupListeners();
@@ -164,37 +137,6 @@ export const settingsPage = {
                     document.documentElement.setAttribute('data-theme', settings.theme);
                 } catch (error) {
                     console.error('Failed to update theme:', error);
-                }
-            });
-        }
-
-        // Timezone select
-        const timezoneSelect = document.getElementById('timezone-select');
-        if (timezoneSelect) {
-            timezoneSelect.addEventListener('change', async (e) => {
-                try {
-                    settings = await API.setSettings({ timezone: e.target.value });
-                    // Trigger clock update
-                    window.dispatchEvent(new CustomEvent('timezoneChanged', { detail: { timezone: settings.timezone } }));
-                } catch (error) {
-                    console.error('Failed to update timezone:', error);
-                }
-            });
-        }
-
-        // Clock format toggle
-        const clockFormatToggle = document.getElementById('clock-format-toggle');
-        if (clockFormatToggle) {
-            clockFormatToggle.addEventListener('click', async () => {
-                const newFormat = settings.clock_format === '12h' ? '24h' : '12h';
-                try {
-                    settings = await API.setSettings({ clock_format: newFormat });
-                    clockFormatToggle.classList.toggle('active', settings.clock_format === '24h');
-                    clockFormatToggle.setAttribute('aria-pressed', settings.clock_format === '24h');
-                    // Trigger clock update
-                    window.dispatchEvent(new CustomEvent('clockFormatChanged', { detail: { format: settings.clock_format } }));
-                } catch (error) {
-                    console.error('Failed to update clock format:', error);
                 }
             });
         }
