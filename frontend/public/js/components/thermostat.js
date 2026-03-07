@@ -67,7 +67,7 @@ export class Thermostat {
         wsClient.on('thermostat', this.wsHandler);
 
         this.wsTempAndHumidityHandler = (dataTempAndHumidity) => {
-            this.dataTempAndHumidity = dataTempAndHumidity;
+            Object.assign(this.dataTempAndHumidity, dataTempAndHumidity);
             this.updateDisplay();
         }
         wsClient.on('temphumid',this.wsTempAndHumidityHandler);
