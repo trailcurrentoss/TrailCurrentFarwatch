@@ -16,7 +16,7 @@ Dockerized microservices stack:
 
 - **Thermostat Control** - Set temperature, view interior/exterior readings
 - **Lighting** - Toggle 8 PDM-controlled devices with brightness adjustment
-- **Energy Dashboard** - Battery voltage, SOC, solar input, shunt data
+- **Energy Dashboard** - Battery voltage, SOC percentage, solar input, power consumption, charge status, time remaining
 - **Water Tanks** - Fresh, grey, and black tank levels
 - **Air Quality** - Temperature, humidity, IAQ index, CO2
 - **Trailer Level** - Pitch and roll indicators

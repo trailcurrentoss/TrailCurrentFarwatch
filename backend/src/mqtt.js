@@ -256,7 +256,8 @@ class MqttService {
                 battery_percent: payload.battery_percent,
                 battery_voltage: payload.battery_voltage,
                 charge_type: payload.charge_type,
-                time_remaining_minutes: payload.time_remaining_minutes
+                time_remaining_minutes: payload.time_remaining_minutes,
+                consumption_watts: payload.consumption_watts
             });
         }
     }
@@ -266,16 +267,18 @@ class MqttService {
         this.broadcast('temphumid', payload);
     }
 
-    // Handle air quality status update from sensor
+    // Handle air quality status update from sensor (legacy topic)
     handleAirQualityStatus(payload) {
         console.log('Received air quality status:', payload);
 
-        // Broadcast air quality data directly via WebSocket (no database storage)
+        // Forward on temphumid channel with new field names for backward compatibility
         if (this.broadcast) {
-            this.broadcast('airquality', {
-                iaq_index: payload.iaq_index,
-                co2_ppm: payload.co2_ppm
-            });
+            const mapped = {};
+            if (payload.tvoc != null) mapped.tvoc = payload.tvoc;
+            if (payload.eco2 != null) mapped.eco2 = payload.eco2;
+            // Legacy field mapping
+            if (payload.co2_ppm != null && mapped.eco2 == null) mapped.eco2 = payload.co2_ppm;
+            this.broadcast('temphumid', mapped);
         }
     }
 
