@@ -267,17 +267,14 @@ class MqttService {
         this.broadcast('temphumid', payload);
     }
 
-    // Handle air quality status update from sensor (legacy topic)
+    // Handle air quality status update from SGP30 sensor (TVOC + eCO2)
     handleAirQualityStatus(payload) {
         console.log('Received air quality status:', payload);
 
-        // Forward on temphumid channel with new field names for backward compatibility
         if (this.broadcast) {
             const mapped = {};
-            if (payload.tvoc != null) mapped.tvoc = payload.tvoc;
-            if (payload.eco2 != null) mapped.eco2 = payload.eco2;
-            // Legacy field mapping
-            if (payload.co2_ppm != null && mapped.eco2 == null) mapped.eco2 = payload.co2_ppm;
+            if (payload.tvoc_ppb != null) mapped.tvoc = payload.tvoc_ppb;
+            if (payload.eco2_ppm != null) mapped.eco2 = payload.eco2_ppm;
             this.broadcast('temphumid', mapped);
         }
     }
