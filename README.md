@@ -1,4 +1,4 @@
-# TrailCurrent Cloud
+# TrailCurrent Farwatch
 
 Cloud-hosted Progressive Web App (PWA) for remote monitoring and control of [TrailCurrent](https://trailcurrent.com) trailer systems. Provides a responsive web interface accessible from any browser.
 
@@ -100,12 +100,12 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
    git clone <repository-url>
    ```
 
-   This creates `~/TrailCurrentCloud`. All remaining steps and paths reference this directory.
+   This creates `~/TrailCurrentFarwatch` (or whatever directory name you choose). All remaining steps and paths reference this directory.
 
 3. **Configure environment:**
 
    ```bash
-   cd ~/TrailCurrentCloud
+   cd ~/TrailCurrentFarwatch
    cp .env.example .env
    ```
 
@@ -132,9 +132,9 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 5. **Prepare map tiles** (if using the map feature):
 
    ```bash
-   mkdir -p ~/TrailCurrentCloud/data/tileserver
+   mkdir -p ~/TrailCurrentFarwatch/data/tileserver
    # Place your .mbtiles file at:
-   # ~/TrailCurrentCloud/data/tileserver/map.mbtiles
+   # ~/TrailCurrentFarwatch/data/tileserver/map.mbtiles
    # See DOCS/GeneratingMapTiles.md for generation instructions
    ```
 
@@ -157,10 +157,10 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
    Add this line:
 
    ```
-   0 0,12 * * * ~/TrailCurrentCloud/scripts/renew-certs.sh >> ~/TrailCurrentCloud/logs/cert-renewal.log 2>&1
+   0 0,12 * * * ~/TrailCurrentFarwatch/scripts/renew-certs.sh >> ~/TrailCurrentFarwatch/logs/cert-renewal.log 2>&1
    ```
 
-   Create the logs directory: `mkdir -p ~/TrailCurrentCloud/logs`
+   Create the logs directory: `mkdir -p ~/TrailCurrentFarwatch/logs`
 
    The renewal script checks twice daily, only renews when needed, copies updated certs to `data/keys/`, reloads nginx, and restarts mosquitto.
 
@@ -174,10 +174,10 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 ### Updating a Running Deployment
 
-After deploying updated code to `~/TrailCurrentCloud` (however you choose to deliver it), rebuild and restart:
+After deploying updated code to `~/TrailCurrentFarwatch` (however you choose to deliver it), rebuild and restart:
 
 ```bash
-cd ~/TrailCurrentCloud
+cd ~/TrailCurrentFarwatch
 docker compose up -d --build
 ```
 
@@ -188,7 +188,7 @@ No certificate or environment changes are needed — `data/keys/`, `data/letsenc
 If the cron job is not configured, or you need to force a renewal:
 
 ```bash
-cd ~/TrailCurrentCloud
+cd ~/TrailCurrentFarwatch
 ./scripts/renew-certs.sh
 ```
 

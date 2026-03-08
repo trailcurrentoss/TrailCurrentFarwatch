@@ -91,7 +91,7 @@ async function startServer() {
 
         // Start server
         server.listen(PORT, '0.0.0.0', () => {
-            console.log(`TrailCurrent API server running on port ${PORT}`);
+            console.log(`Farwatch API server running on port ${PORT}`);
             console.log(`WebSocket available at ws://localhost:${PORT}/ws`);
         });
 

@@ -7,8 +7,8 @@ export const loginPage = {
             <div class="login-container">
                 <div class="login-card">
                     <div class="login-header">
-                        <img src="/icons/logo-white.svg" alt="TrailCurrent" class="login-logo-img app-logo-dark">
-                        <img src="/icons/logo-color.svg" alt="TrailCurrent" class="login-logo-img app-logo-light">
+                        <img src="/icons/logo-white.svg" alt="Farwatch" class="login-logo-img app-logo-dark">
+                        <img src="/icons/logo-color.svg" alt="Farwatch" class="login-logo-img app-logo-light">
                         <p class="login-subtitle">Sign in to continue</p>
                     </div>
 
@@ -48,7 +48,7 @@ export const loginPage = {
                     </form>
 
                     <div class="login-footer">
-                        <p>TrailCurrent bringing software defined vehicles to <b>all</b> vehicles</p>
+                        <p>Farwatch by TrailCurrent &mdash; software defined vehicles for <b>all</b> vehicles</p>
                     </div>
                 </div>
             </div>

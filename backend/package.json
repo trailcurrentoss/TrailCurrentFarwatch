@@ -1,7 +1,7 @@
 {
   "name": "rv-infotainment-backend",
   "version": "1.0.0",
-  "description": "Backend API for TrailCurrent System",
+  "description": "Backend API for Farwatch by TrailCurrent",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

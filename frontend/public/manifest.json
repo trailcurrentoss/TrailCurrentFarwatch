@@ -1,6 +1,6 @@
 {
-    "name": "TrailCurrent System",
-    "short_name": "TrailCurrent",
+    "name": "Farwatch",
+    "short_name": "Farwatch",
     "manifest_version": 3,
     "version": "__GIT_SHA__",
     "description": "Control your RV's thermostat, lights, leveling, and monitor energy",

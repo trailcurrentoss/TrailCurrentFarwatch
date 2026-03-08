@@ -117,8 +117,8 @@ class App {
         appEl.innerHTML = `
             <header class="app-header">
                 <div class="header-left">
-                    <img src="/icons/logo-white.svg" alt="TrailCurrent" class="app-logo app-logo-dark">
-                    <img src="/icons/logo-color.svg" alt="TrailCurrent" class="app-logo app-logo-light">
+                    <img src="/icons/logo-white.svg" alt="Farwatch" class="app-logo app-logo-dark">
+                    <img src="/icons/logo-color.svg" alt="Farwatch" class="app-logo app-logo-light">
                 </div>
                 <div class="header-right">
                     <button class="logout-btn" id="logout-btn" title="Sign out (${displayName})">
