@@ -1,18 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" width="240" height="48">
   <defs>
-    <linearGradient id="trailGradientWhite" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="towerGradientWhite" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" style="stop-color:#ffffff"/>
       <stop offset="100%" style="stop-color:#74fe00"/>
     </linearGradient>
   </defs>
-  <g transform="translate(4, 8)">
-    <path d="M0 28 L12 8 L18 16 L28 4 L38 28 Z" fill="#ffffff" opacity="0.3"/>
-    <!-- Cloud over mountain -->
-    <path d="M10 6 Q10 2 14 2 Q16 0 19 1 Q22 0 23 3 Q26 3 26 6 Q26 9 23 9 L12 9 Q10 9 10 6 Z"
-          fill="#ffffff" opacity="0.5"/>
-    <path d="M4 26 Q10 22 14 24 Q20 27 24 22 Q28 17 34 20" stroke="url(#trailGradientWhite)" stroke-width="3" stroke-linecap="round" fill="none"/>
-    <path d="M30 10 L33 16 L29 16 L32 24" stroke="#74fe00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Signal Tower Icon -->
+  <g transform="translate(4, 2) scale(0.085)">
+    <!-- Tower base -->
+    <polygon points="230,460 282,460 270,260 242,260" fill="#ffffff"/>
+    <!-- Tower top -->
+    <rect x="238" y="220" width="36" height="50" rx="4" fill="#ffffff"/>
+    <!-- Antenna -->
+    <rect x="252" y="160" width="8" height="70" rx="4" fill="#ffffff"/>
+    <circle cx="256" cy="150" r="14" fill="#ffffff"/>
+    <!-- Signal arcs - left -->
+    <path d="M220 200 Q180 150 220 100" fill="none" stroke="url(#towerGradientWhite)" stroke-width="14" stroke-linecap="round"/>
+    <path d="M190 220 Q130 150 190 75" fill="none" stroke="url(#towerGradientWhite)" stroke-width="12" stroke-linecap="round" opacity="0.7"/>
+    <path d="M160 240 Q80 150 160 55" fill="none" stroke="url(#towerGradientWhite)" stroke-width="10" stroke-linecap="round" opacity="0.4"/>
+    <!-- Signal arcs - right -->
+    <path d="M292 200 Q332 150 292 100" fill="none" stroke="url(#towerGradientWhite)" stroke-width="14" stroke-linecap="round"/>
+    <path d="M322 220 Q382 150 322 75" fill="none" stroke="url(#towerGradientWhite)" stroke-width="12" stroke-linecap="round" opacity="0.7"/>
+    <path d="M352 240 Q432 150 352 55" fill="none" stroke="url(#towerGradientWhite)" stroke-width="10" stroke-linecap="round" opacity="0.4"/>
   </g>
+
+  <!-- Text: Farwatch -->
   <text x="52" y="33" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="700" fill="#ffffff">
     <tspan>Far</tspan><tspan fill="#d0e2c7">watch</tspan>
   </text>

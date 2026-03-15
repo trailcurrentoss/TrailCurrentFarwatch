@@ -48,7 +48,7 @@ export const loginPage = {
                     </form>
 
                     <div class="login-footer">
-                        <p>Farwatch by TrailCurrent &mdash; software defined vehicles for <b>all</b> vehicles</p>
+                        <p>Farwatch by TrailCurrent</p>
                     </div>
                 </div>
             </div>

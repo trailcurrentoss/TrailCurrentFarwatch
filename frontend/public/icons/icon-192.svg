@@ -1,49 +1,30 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   viewBox="0 0 192 192"
-   width="192"
-   height="192"
-   version="1.1"
-   xmlns="http://www.w3.org/2000/svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
   <defs>
-    <linearGradient
-       id="iconGradient"
-       x1="0"
-       y1="0"
-       x2="1"
-       y2="0">
+    <linearGradient id="iconGradient" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" style="stop-color:#52a441"/>
       <stop offset="100%" style="stop-color:#74fe00"/>
     </linearGradient>
   </defs>
-  <g transform="matrix(4.2666667,0,0,4.2666667,-8.6287181,-4.4024074)">
-    <rect
-       style="fill:#52a441;fill-opacity:1;stroke-width:5.73809"
-       width="45"
-       height="45"
-       x="2.0223558"
-       y="1.0318142"
-       ry="5.447979" />
-    <path
-       d="M 6,36 16,14 22,22 32,8 42,36 Z"
-       fill="#3d7d31" />
-    <!-- Cloud over mountain -->
-    <path
-       d="M 12,11 Q 12,7 16,7 Q 18,5 21,6 Q 24,5 25,8 Q 28,8 28,11 Q 28,14 25,14 L 14,14 Q 12,14 12,11 Z"
-       fill="#ffffff"
-       opacity="0.45" />
-    <path
-       d="m 10,32 q 6,-6 12,-2 6,4 12,-2 4,-4 8,-2"
-       stroke="#ffffff"
-       stroke-width="3"
-       stroke-linecap="round"
-       fill="none" />
-    <path
-       d="m 34,14 4,8 h -6 l 4,10"
-       stroke="#74fe00"
-       stroke-width="2.5"
-       stroke-linecap="round"
-       stroke-linejoin="round"
-       fill="none" />
+  <!-- Rounded background -->
+  <rect width="192" height="192" rx="32" fill="#52a441"/>
+  <!-- Signal Tower -->
+  <g transform="translate(96, 96) scale(0.3) translate(-256, -256)">
+    <!-- Tower base -->
+    <polygon points="230,460 282,460 270,260 242,260" fill="#ffffff"/>
+    <!-- Tower top -->
+    <rect x="238" y="220" width="36" height="50" rx="4" fill="#ffffff"/>
+    <!-- Antenna -->
+    <rect x="252" y="160" width="8" height="70" rx="4" fill="#ffffff"/>
+    <circle cx="256" cy="150" r="14" fill="#ffffff"/>
+    <!-- Signal arcs - left -->
+    <path d="M220 200 Q180 150 220 100" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+    <path d="M190 220 Q130 150 190 75" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.7"/>
+    <path d="M160 240 Q80 150 160 55" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.45"/>
+    <!-- Signal arcs - right -->
+    <path d="M292 200 Q332 150 292 100" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+    <path d="M322 220 Q382 150 322 75" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.7"/>
+    <path d="M352 240 Q432 150 352 55" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.45"/>
+    <!-- Green accent glow on antenna -->
+    <circle cx="256" cy="150" r="8" fill="#74fe00" opacity="0.8"/>
   </g>
 </svg>
