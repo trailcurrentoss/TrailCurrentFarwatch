@@ -1,10 +1,11 @@
 // Trailer page - Level indicator
-import { API } from '../api.js';
 import { LevelIndicator } from '../components/level-indicator.js';
 import { GnssDetails } from '../components/gnss-details.js';
+import { PlateauStatus } from '../components/plateau-status.js';
 
 let levelIndicator = null;
 let gnssDetails = null;
+let plateauStatus = null;
 
 export const trailerPage = {
     render() {
@@ -18,6 +19,11 @@ export const trailerPage = {
                     Green = Level | Yellow = Slight Tilt | Red = Needs Adjustment
                 </p>
 
+                <h1 class="section-title">Plateau Status</h1>
+                <div class="card" id="plateau-status-card">
+                    <!-- Plateau calibration status will be rendered here -->
+                </div>
+
                 <h1 class="section-title">GNSS Details</h1>
                 <div class="card" id="gnss-card">
                     <!-- GNSS Data will be rendered here -->
@@ -26,16 +32,17 @@ export const trailerPage = {
         `;
     },
 
-    async init() {
-        try {
-            const levelData = await API.getTrailerLevel();
-            levelIndicator = new LevelIndicator('level-card');
-            document.getElementById('level-card').innerHTML = levelIndicator.render();
-            levelIndicator.init(levelData);
-        } catch (error) {
-            console.error('Failed to fetch level data:', error);
-            document.getElementById('level-card').innerHTML = '<p style="color: var(--danger);">Failed to load level data</p>';
-        }
+    init() {
+        // Level data arrives via WebSocket from Plateau CAN bus — no API fetch needed.
+        // Shows "-" until first real data arrives.
+        levelIndicator = new LevelIndicator('level-card');
+        document.getElementById('level-card').innerHTML = levelIndicator.render();
+        levelIndicator.init();
+
+        plateauStatus = new PlateauStatus('plateau-status-card');
+        document.getElementById('plateau-status-card').innerHTML = plateauStatus.render();
+        plateauStatus.init();
+
         try {
             gnssDetails = new GnssDetails('gnss-card');
             document.getElementById('gnss-card').innerHTML = gnssDetails.render();
@@ -50,6 +57,10 @@ export const trailerPage = {
         if (levelIndicator) {
             levelIndicator.cleanup();
             levelIndicator = null;
+        }
+        if (plateauStatus) {
+            plateauStatus.cleanup();
+            plateauStatus = null;
         }
         if (gnssDetails) {
             gnssDetails.cleanup();

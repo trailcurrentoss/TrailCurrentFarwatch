@@ -10,6 +10,7 @@ const MQTT_THERMOSTAT = 'thermostat';
 const MQTT_ENERGY = 'energy';
 const MQTT_AIRQUALITY = 'airquality';
 const MQTT_GPS = 'gps';
+const MQTT_LEVEL = 'level';
 const MQTT_CONFIG = 'config';
 
 // MQTT Message Types
@@ -29,6 +30,8 @@ const TOPICS = {
     GPS_LAT_LON: `${MQTT_ROOT}/${MQTT_GPS}/latlon`,
     GPS_ALT: `${MQTT_ROOT}/${MQTT_GPS}/alt`,
     GPS_GNSS_DETAILS: `${MQTT_ROOT}/${MQTT_GPS}/details`,
+    LEVEL_TILT: `${MQTT_ROOT}/${MQTT_LEVEL}/tilt`,
+    LEVEL_STATUS: `${MQTT_ROOT}/${MQTT_LEVEL}/${MSG_STATUS}`,
     DEPLOYMENT_AVAILABLE: `${MQTT_ROOT}/deployment/available`,
     DEPLOYMENT_STATUS: `${MQTT_ROOT}/deployment/status`,
     PDM_CHANNELS_CONFIG: `${MQTT_ROOT}/${MQTT_CONFIG}/pdm_channels`
@@ -179,6 +182,24 @@ class MqttService {
             }
         });
 
+        // Subscribe to Plateau level tilt topic
+        this.client.subscribe(TOPICS.LEVEL_TILT, (err) => {
+            if (err) {
+                console.error('Failed to subscribe to level tilt:', err);
+            } else {
+                console.log('Subscribed to level tilt topic');
+            }
+        });
+
+        // Subscribe to Plateau level status topic (calibration + IMU state)
+        this.client.subscribe(TOPICS.LEVEL_STATUS, (err) => {
+            if (err) {
+                console.error('Failed to subscribe to level status:', err);
+            } else {
+                console.log('Subscribed to level status topic');
+            }
+        });
+
         // Subscribe to PDM channel config topic
         this.client.subscribe(TOPICS.PDM_CHANNELS_CONFIG, (err) => {
             if (err) {
@@ -222,6 +243,10 @@ class MqttService {
                 this.handleThermostatStatus(payload);
             } else if (parts[1] === 'deployment' && parts[2] === 'status') {
                 this.handleDeploymentStatus(payload);
+            } else if (parts[1] === MQTT_LEVEL && parts[2] === 'tilt') {
+                this.handleLevelTilt(payload);
+            } else if (parts[1] === MQTT_LEVEL && parts[2] === MSG_STATUS) {
+                this.handleLevelStatus(payload);
             } else if (parts[1] === MQTT_CONFIG && parts[2] === 'pdm_channels') {
                 this.handlePdmChannelConfig(payload);
             }
@@ -400,6 +425,22 @@ class MqttService {
                 wsPayload.progress = progress;
             }
             this.broadcast('deployment_status', wsPayload);
+        }
+    }
+
+    // Handle Plateau tilt data (CAN ID 0x30 decoded by Node-RED)
+    // Payload: { front_back, side_to_side, front_back_diff_mm, left_right_diff_mm }
+    handleLevelTilt(payload) {
+        if (this.broadcast) {
+            this.broadcast('level', payload);
+        }
+    }
+
+    // Handle Plateau status data (CAN ID 0x32 decoded by Node-RED)
+    // Payload: { imu_connected, fully_calibrated, cal_sys, cal_gyro, cal_accel, cal_mag, mounting }
+    handleLevelStatus(payload) {
+        if (this.broadcast) {
+            this.broadcast('level_status', payload);
         }
     }
 
