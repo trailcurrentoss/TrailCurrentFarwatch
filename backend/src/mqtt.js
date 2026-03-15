@@ -11,6 +11,7 @@ const MQTT_ENERGY = 'energy';
 const MQTT_AIRQUALITY = 'airquality';
 const MQTT_GPS = 'gps';
 const MQTT_LEVEL = 'level';
+const MQTT_RELAYS = 'relays';
 const MQTT_CONFIG = 'config';
 
 // MQTT Message Types
@@ -32,9 +33,11 @@ const TOPICS = {
     GPS_GNSS_DETAILS: `${MQTT_ROOT}/${MQTT_GPS}/details`,
     LEVEL_TILT: `${MQTT_ROOT}/${MQTT_LEVEL}/tilt`,
     LEVEL_STATUS: `${MQTT_ROOT}/${MQTT_LEVEL}/${MSG_STATUS}`,
+    RELAY_STATUS: `${MQTT_ROOT}/${MQTT_RELAYS}/+/${MSG_STATUS}`,
     DEPLOYMENT_AVAILABLE: `${MQTT_ROOT}/deployment/available`,
     DEPLOYMENT_STATUS: `${MQTT_ROOT}/deployment/status`,
-    PDM_CHANNELS_CONFIG: `${MQTT_ROOT}/${MQTT_CONFIG}/pdm_channels`
+    PDM_CHANNELS_CONFIG: `${MQTT_ROOT}/${MQTT_CONFIG}/pdm_channels`,
+    SYSTEM_CONFIG: `${MQTT_ROOT}/${MQTT_CONFIG}/system`
 };
 
 class MqttService {
@@ -107,6 +110,15 @@ class MqttService {
                 console.error('Failed to subscribe to light status:', err);
             } else {
                 console.log('Subscribed to light status topics');
+            }
+        });
+
+        // Subscribe to relay status topics (for Switchback relay module)
+        this.client.subscribe(TOPICS.RELAY_STATUS, (err) => {
+            if (err) {
+                console.error('Failed to subscribe to relay status:', err);
+            } else {
+                console.log('Subscribed to relay status topics');
             }
         });
 
@@ -208,6 +220,15 @@ class MqttService {
                 console.log('Subscribed to PDM channels config topic');
             }
         });
+
+        // Subscribe to system config topic (full config snapshot from in-vehicle)
+        this.client.subscribe(TOPICS.SYSTEM_CONFIG, (err) => {
+            if (err) {
+                console.error('Failed to subscribe to system config:', err);
+            } else {
+                console.log('Subscribed to system config topic');
+            }
+        });
     }
 
     handleMessage(topic, message) {
@@ -218,7 +239,14 @@ class MqttService {
             const parts = topic.split('/');
             if (parts[0] !== MQTT_ROOT) return;
 
-            if (parts[1] === MQTT_LIGHTS) {
+            if (parts[1] === MQTT_RELAYS) {
+                const relayId = parseInt(parts[2]);
+                const messageType = parts[3];
+
+                if (messageType === MSG_STATUS) {
+                    this.handleRelayStatus(relayId, payload);
+                }
+            } else if (parts[1] === MQTT_LIGHTS) {
                 const lightId = parseInt(parts[2]);
                 const messageType = parts[3];
 
@@ -249,6 +277,8 @@ class MqttService {
                 this.handleLevelStatus(payload);
             } else if (parts[1] === MQTT_CONFIG && parts[2] === 'pdm_channels') {
                 this.handlePdmChannelConfig(payload);
+            } else if (parts[1] === MQTT_CONFIG && parts[2] === 'system') {
+                this.handleSystemConfig(payload);
             }
         } catch (error) {
             console.error('Error handling MQTT message:', error);
@@ -267,6 +297,17 @@ class MqttService {
                 "state": payload.state, 
                 "brightness": payload.brightness 
             });
+        }
+    }
+
+    // Handle relay status update from Switchback module
+    // Maps relay channel (1-6) to light ID (101-106) for unified WebSocket broadcast
+    handleRelayStatus(relayId, payload) {
+        const SWITCHBACK_ID_BASE = 100;
+        const lightId = SWITCHBACK_ID_BASE + relayId;
+
+        if (this.broadcast) {
+            this.broadcast('light', { id: lightId, _id: lightId, state: payload.state });
         }
     }
 
@@ -387,6 +428,76 @@ class MqttService {
         }
     }
 
+    // Handle full system config snapshot from in-vehicle system
+    // Payload: { wizard_completed, cloud_enabled, wifi_ssid, modules, channels, updated_at, snapshot_at }
+    async handleSystemConfig(payload) {
+        console.log('[System Config] Received config snapshot');
+
+        if (!this.db) return;
+
+        try {
+            // Store module config in system_config collection
+            const systemConfig = this.db.collection('system_config');
+            const configUpdate = {
+                wizard_completed: payload.wizard_completed || false,
+                wifi_ssid: payload.wifi_ssid || '',
+                modules: payload.modules || [],
+                vehicle_updated_at: payload.updated_at || null,
+                snapshot_at: payload.snapshot_at || null,
+                received_at: new Date()
+            };
+
+            await systemConfig.updateOne(
+                { _id: 'main' },
+                { $set: configUpdate },
+                { upsert: true }
+            );
+
+            // Sync channels to lights collection (same logic as PDM but includes all sources)
+            const channels = payload.channels;
+            if (Array.isArray(channels) && channels.length > 0) {
+                const lights = this.db.collection('lights');
+                const validIds = [];
+
+                for (const ch of channels) {
+                    if (!ch.id || !ch.name) continue;
+                    validIds.push(ch.id);
+                    const update = {
+                        name: ch.name,
+                        icon: ch.icon || 'lightbulb',
+                        type: ch.type || 'light',
+                        source: ch.source || 'pdm',
+                        updated_at: new Date()
+                    };
+                    if (ch.relay_channel !== undefined) {
+                        update.relay_channel = ch.relay_channel;
+                    }
+                    await lights.updateOne(
+                        { _id: ch.id },
+                        { $set: update },
+                        { upsert: true }
+                    );
+                }
+
+                // Remove orphaned lights no longer in the config
+                if (validIds.length > 0) {
+                    await lights.deleteMany({ _id: { $nin: validIds } });
+                }
+
+                // Broadcast updated light config to WebSocket clients
+                if (this.broadcast) {
+                    const allLights = await lights.find().sort({ _id: 1 }).toArray();
+                    const result = allLights.map(l => ({ id: l._id, ...l }));
+                    this.broadcast('pdm_config', { lights: result });
+                }
+            }
+
+            console.log(`[System Config] Synced ${(payload.modules || []).length} modules, ${(channels || []).length} channels`);
+        } catch (error) {
+            console.error('[System Config] Error handling system config:', error);
+        }
+    }
+
     // Handle deployment status update from vehicle
     async handleDeploymentStatus(payload) {
         console.log('Received deployment status:', payload);
@@ -489,6 +600,34 @@ class MqttService {
         const payload = { state };
 
         console.log(`Publishing all lights command to ${topic}:`, payload);
+        this.client.publish(topic, JSON.stringify(payload), { qos: 1 });
+        return true;
+    }
+
+    // Publish relay toggle command — routes to CAN via Node-RED on in-vehicle system
+    publishRelayToggle(channel) {
+        if (!this.connected) {
+            console.warn('MQTT not connected, cannot publish relay toggle');
+            return false;
+        }
+
+        const topic = `${MQTT_ROOT}/${MQTT_RELAYS}/${channel + 1}/${MSG_COMMAND}`;
+        const payload = { action: 'toggle' };
+        console.log(`Publishing relay toggle to ${topic}:`, payload);
+        this.client.publish(topic, JSON.stringify(payload), { qos: 1 });
+        return true;
+    }
+
+    // Publish relay all on/off command
+    publishRelayAllCommand(state) {
+        if (!this.connected) {
+            console.warn('MQTT not connected, cannot publish relay all command');
+            return false;
+        }
+
+        const topic = `${MQTT_ROOT}/${MQTT_RELAYS}/all/${MSG_COMMAND}`;
+        const payload = { state };
+        console.log(`Publishing relay all command to ${topic}:`, payload);
         this.client.publish(topic, JSON.stringify(payload), { qos: 1 });
         return true;
     }
