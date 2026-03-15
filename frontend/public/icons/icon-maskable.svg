@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Full bleed green background for maskable safe zone -->
+  <rect width="512" height="512" fill="#52a441"/>
+  <!-- Signal Tower - scaled to fit within 80% safe zone (inner 410px centered) -->
+  <g transform="translate(256, 266) scale(0.58) translate(-256, -256)">
+    <!-- Tower base -->
+    <polygon points="230,460 282,460 270,260 242,260" fill="#ffffff"/>
+    <!-- Tower top -->
+    <rect x="238" y="220" width="36" height="50" rx="4" fill="#ffffff"/>
+    <!-- Antenna -->
+    <rect x="252" y="160" width="8" height="70" rx="4" fill="#ffffff"/>
+    <circle cx="256" cy="150" r="14" fill="#ffffff"/>
+    <!-- Signal arcs - left -->
+    <path d="M220 200 Q180 150 220 100" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+    <path d="M190 220 Q130 150 190 75" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.7"/>
+    <path d="M160 240 Q80 150 160 55" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.45"/>
+    <!-- Signal arcs - right -->
+    <path d="M292 200 Q332 150 292 100" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+    <path d="M322 220 Q382 150 322 75" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.7"/>
+    <path d="M352 240 Q432 150 352 55" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.45"/>
+    <!-- Green accent glow on antenna -->
+    <circle cx="256" cy="150" r="8" fill="#74fe00" opacity="0.8"/>
+  </g>
+</svg>
