@@ -49,19 +49,6 @@ async function seedDatabase() {
         }
     }
 
-    // Seed trailer level (simulated - no MQTT source)
-    const trailerLevel = db.collection('trailer_level');
-    const existingLevel = await trailerLevel.findOne({ _id: 'main' });
-    if (!existingLevel) {
-        await trailerLevel.insertOne({
-            _id: 'main',
-            front_back: 0.0,
-            side_to_side: 0.0,
-            updated_at: new Date()
-        });
-        console.log('Seeded trailer level');
-    }
-
     // Seed settings (user preferences - persisted)
     const settings = db.collection('settings');
     const existingSettings = await settings.findOne({ _id: 'main' });
@@ -74,21 +61,7 @@ async function seedDatabase() {
         console.log('Seeded settings');
     }
 
-    // Seed water tanks (simulated - no MQTT source)
-    const water = db.collection('water');
-    const existingWater = await water.findOne({ _id: 'main' });
-    if (!existingWater) {
-        await water.insertOne({
-            _id: 'main',
-            fresh: 75.0,
-            grey: 30.0,
-            black: 15.0,
-            updated_at: new Date()
-        });
-        console.log('Seeded water tanks');
-    }
-
-    // Note: energy, airquality, and thermostat data now come from MQTT only
+    // Note: energy, airquality, thermostat, water, and level data come from MQTT only
     // No database seeding needed for these - data flows via WebSocket
 
     console.log('Database seeding complete');
