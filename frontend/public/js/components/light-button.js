@@ -12,7 +12,8 @@ export class LightButton {
         const stateClass = this.light.state ? 'on' : '';
         const iconKey = this.light.icon || 'lightbulb';
         const filled = !!this.light.state;
-        const brightnessHtml = this.light.type !== 'other' ? `
+        const showBrightness = this.light.type !== 'other' && this.light.source !== 'switchback';
+        const brightnessHtml = showBrightness ? `
                 <button class="brightness-trigger" data-light-id="${this.light.id}" title="Adjust brightness" aria-label="Adjust brightness for ${this.light.name}">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"/>
