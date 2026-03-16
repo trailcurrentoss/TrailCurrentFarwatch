@@ -412,9 +412,13 @@ class MqttService {
                 );
             }
 
-            // Remove orphaned lights no longer in the config
+            // Remove orphaned PDM lights no longer in the config
+            // Only delete entries without a source field (PDM lights) — leave switchback entries alone
             if (validIds.length > 0) {
-                await lights.deleteMany({ _id: { $nin: validIds } });
+                await lights.deleteMany({
+                    _id: { $nin: validIds },
+                    source: { $exists: false }
+                });
             }
 
             // Broadcast updated config to connected WebSocket clients
