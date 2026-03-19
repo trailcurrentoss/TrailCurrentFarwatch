@@ -2,6 +2,10 @@
 
 Cloud-hosted Progressive Web App (PWA) for remote monitoring and control of [TrailCurrent](https://trailcurrent.com) trailer systems. Provides a responsive web interface accessible from any browser.
 
+<p align="center">
+  <img src="DOCS/images/farwatch_home.png" alt="Farwatch Home Screen" width="400">
+</p>
+
 ## Architecture
 
 Dockerized microservices stack:
